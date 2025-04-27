@@ -8,7 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
-
+venv
 #Dataset
 /Fake.br-Corpus/
 
