@@ -1,14 +1,14 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import LabelEncoder
-import unicodedata
 import re
+import unicodedata
+from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from gensim.models import Word2Vec
+import pickle
 
 
-def processar_dataset(df, texto_col='Email Text', target_col='Email Type', vector_size=200, window=6, min_count=2):
+def processar_dataset(df, texto_col='Email Text', target_col='Email Type', vector_size=200, window=6, min_count=2, pkl_path='modelo_phishing.pkl'):
     if 'Unnamed: 0' in df.columns:
         df = df.drop(columns=['Unnamed: 0'])
 
@@ -17,8 +17,8 @@ def processar_dataset(df, texto_col='Email Text', target_col='Email Type', vecto
     df = df.dropna(subset=['texto'])
     df = df.drop_duplicates(subset='texto', keep='first')
 
-    le = LabelEncoder()
-    df[target_col] = le.fit_transform(df[target_col])
+    label_encoder = LabelEncoder()
+    df[target_col] = label_encoder.fit_transform(df[target_col])
 
     def remove_accents(input_str):
         nfkd_form = unicodedata.normalize('NFKD', input_str)
@@ -62,11 +62,27 @@ def processar_dataset(df, texto_col='Email Text', target_col='Email Type', vecto
     vetores = df['texto'].apply(lambda x: vetor_medio(x, model_w2v))
     matriz = np.vstack(vetores.values)
 
+    # Criar DataFrame com vetores e manter a coluna target
     df_w2v = pd.DataFrame(
         matriz, columns=[f'w2v_{i}' for i in range(model_w2v.vector_size)])
+
+    # Garantir que a coluna target está presente e é a última coluna
     df_w2v[target_col] = df[target_col].values
 
-    df_tratado = df_w2v
+    # Reordenar colunas para deixar a target como última
+    colunas = [col for col in df_w2v.columns if col !=
+               target_col] + [target_col]
+    df_tratado = df_w2v[colunas]
+
+    # Salvar componentes separadamente
+    with open('w2v_model.pkl', 'wb') as f:
+        pickle.dump(model_w2v, f)
+
+    with open('label_encoder.pkl', 'wb') as f:
+        pickle.dump(label_encoder, f)
+
+    # Salvar dataset tratado para uso no treinamento
+    df_tratado.to_csv('dados_RN.csv', index=False)
 
     return df_tratado, model_w2v
 
