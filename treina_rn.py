@@ -42,4 +42,4 @@ def treinar_e_salvar_modelo(df_final, target_col='Email Type', pkl_path='modelo.
 if __name__ == "__main__":
     df = pd.read_csv('dados_RN.csv')  
     df_final = df.copy()  
-    treinar_e_salvar_modelo(df_final, target_col='Email Type', pkl_path='modelo.pkl')
+    treinar_e_salvar_modelo(df_final, target_col='Email Type', pkl_path='modelo_phishing.pkl')
